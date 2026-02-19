@@ -1,7 +1,6 @@
  'use client';
 
-import React, { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import React from 'react';
 import MobileCard from '../components/MobileCard';
 
 // Samsung mobiles data
@@ -93,101 +92,28 @@ const samsungMobiles = [
 ];
 
 export default function SamsungPage() {
-  // Filter states
-  const [brandsOpen, setBrandsOpen] = useState(false);
-  const [priceRangeOpen, setPriceRangeOpen] = useState(false);
-  const [ramOpen, setRamOpen] = useState(false);
-  const [memoryOpen, setMemoryOpen] = useState(false);
-  const [featuresOpen, setFeaturesOpen] = useState(false);
-
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Main Content - with flex layout */}
-      <div className="flex">
-        {/* Main Content Area */}
-        <main className="flex-1 p-6">
-          {/* Page Title */}
-          <h1 className="text-4xl font-bold text-blue-500 text-center mb-8">
-            Samsung Mobiles
-          </h1>
+      <main className="px-6 py-4">
+        {/* Page Title */}
+        <h1 className="text-3xl font-bold   text-gray-800 text-center mb-6">
+          Samsung Mobiles
+        </h1>
 
-          {/* Mobile Grid - increased gap for more spacing between cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4">
-            {samsungMobiles.map((mobile) => (
-              <MobileCard
-                key={mobile.id}
-                id={mobile.id}
-                name={mobile.name}
-                price={mobile.price}
-                image={mobile.image}
-                brand={mobile.brand}
-              />
-            ))}
-          </div>
-        </main>
-
-        {/* Right Sidebar - Filters (compact) */}
-        <aside className="hidden xl:block w-56 p-4 bg-white border-l border-gray-200 sticky top-0 h-screen overflow-y-auto">
-          <div className="space-y-1">
-
-            {/* Brands Filter */}
-            <div className="border-b border-gray-100 pb-2">
-              <button
-                onClick={() => setBrandsOpen(!brandsOpen)}
-                className="w-full flex items-center justify-between py-1.5 font-semibold text-xs text-gray-800 hover:text-blue-600 transition-colors"
-              >
-                <span>BRANDS</span>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${brandsOpen ? 'rotate-180' : ''}`} />
-              </button>
-            </div>
-
-            {/* Price Range Filter */}
-            <div className="border-b border-gray-100 pb-2">
-              <button
-                onClick={() => setPriceRangeOpen(!priceRangeOpen)}
-                className="w-full flex items-center justify-between py-1.5 font-semibold text-xs text-gray-800 hover:text-blue-600 transition-colors"
-              >
-                <span>SET YOUR PRICE RANGE</span>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${priceRangeOpen ? 'rotate-180' : ''}`} />
-              </button>
-            </div>
-
-            {/* RAM Filter */}
-            <div className="border-b border-gray-100 pb-2">
-              <button
-                onClick={() => setRamOpen(!ramOpen)}
-                className="w-full flex items-center justify-between py-1.5 font-semibold text-xs text-gray-800 hover:text-blue-600 transition-colors"
-              >
-                <span>RAM</span>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${ramOpen ? 'rotate-180' : ''}`} />
-              </button>
-            </div>
-
-            {/* Memory Filter */}
-            <div className="border-b border-gray-100 pb-2">
-              <button
-                onClick={() => setMemoryOpen(!memoryOpen)}
-                className="w-full flex items-center justify-between py-1.5 font-semibold text-xs text-gray-800 hover:text-blue-600 transition-colors"
-              >
-                <span>MEMORY</span>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${memoryOpen ? 'rotate-180' : ''}`} />
-              </button>
-            </div>
-
-            {/* Features Filter */}
-            <div className="border-b border-gray-100 pb-2">
-              <button
-                onClick={() => setFeaturesOpen(!featuresOpen)}
-                className="w-full flex items-center justify-between py-1.5 font-semibold text-xs text-gray-800 hover:text-blue-600 transition-colors"
-              >
-                <span>FEATURES</span>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${featuresOpen ? 'rotate-180' : ''}`} />
-              </button>
-            </div>
-
-          </div>
-        </aside>
-      </div>
+        {/* Mobile Grid */}
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-5">
+          {samsungMobiles.map((mobile) => (
+            <MobileCard
+              key={mobile.id}
+              id={mobile.id}
+              name={mobile.name}
+              price={mobile.price}
+              image={mobile.image}
+              brand={mobile.brand}
+            />
+          ))}
+        </div>
+      </main>
     </div>
   );
 }
