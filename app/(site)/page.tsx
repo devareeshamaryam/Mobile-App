@@ -1,11 +1,11 @@
- import Layout from './components/Layout';
-import LatestMobilesSection from './components/LatestMobilesSection';
-import PriceAbove50kSection from './components/PriceAbove50kSection';
-import Price40to50kSection from './components/Price40to50kSection';
-import DiscoverMoreResponsive from './components/Discovermoreresponsive';
-import Price30to40kSection from './components/Price30to40kSection';
-import Price20to30kSection from './components/Price20to30kSection';
-import Price10to20kSection from './components/Price10to20kSection';
+ import Layout from '../components/Layout';
+import LatestMobilesSection from '../components/LatestMobilesSection';
+import PriceAbove50kSection from '../components/PriceAbove50kSection';
+import Price40to50kSection from '../components/Price40to50kSection';
+import DiscoverMoreResponsive from '../components/Discovermoreresponsive';
+import Price30to40kSection from '../components/Price30to40ksection';
+import Price20to30kSection from '../components/Price20to30ksection';
+import Price10to20kSection from '../components/Price10to20ksection';
 import {
   latestMobiles,
   above50kMobiles,
