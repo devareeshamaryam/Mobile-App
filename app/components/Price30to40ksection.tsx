@@ -4,7 +4,7 @@ import { useRef, useEffect, useState } from 'react';
 import MobileCard from './MobileCard';
 
 interface Mobile {
-  id: number;
+  id: string;  // ✅ string
   image: string;
   name: string;
   price: number;
@@ -56,20 +56,14 @@ export default function Price30to40kSection({ mobiles }: Price30to40kSectionProp
           <div className="h-0.5 w-16 bg-gradient-to-r from-blue-600 to-blue-900 rounded-full"></div>
         </div>
         <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => scroll('left')}
-            disabled={!canScrollLeft}
-            className="w-7 h-7 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:bg-blue-900 hover:text-white hover:border-blue-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
-          >
+          <button onClick={() => scroll('left')} disabled={!canScrollLeft}
+            className="w-7 h-7 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:bg-blue-900 hover:text-white hover:border-blue-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <button
-            onClick={() => scroll('right')}
-            disabled={!canScrollRight}
-            className="w-7 h-7 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:bg-blue-900 hover:text-white hover:border-blue-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
-          >
+          <button onClick={() => scroll('right')} disabled={!canScrollRight}
+            className="w-7 h-7 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:bg-blue-900 hover:text-white hover:border-blue-900 disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200">
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
             </svg>
@@ -87,13 +81,7 @@ export default function Price30to40kSection({ mobiles }: Price30to40kSectionProp
       >
         {mobiles.map((mobile) => (
           <div key={mobile.id} className="flex-shrink-0">
-            <MobileCard
-              id={mobile.id}
-              image={mobile.image}
-              name={mobile.name}
-              price={mobile.price}
-              brand={mobile.brand}
-            />
+            <MobileCard id={mobile.id} image={mobile.image} name={mobile.name} price={mobile.price} brand={mobile.brand} />
           </div>
         ))}
       </div>

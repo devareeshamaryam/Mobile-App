@@ -1,10 +1,10 @@
-'use client';
+ 'use client';
 
 import { useRef, useEffect, useState } from 'react';
 import MobileCard from './MobileCard';
 
 interface Mobile {
-  id: number;
+  id: string;  // ✅ string
   image: string;
   name: string;
   price: number;
