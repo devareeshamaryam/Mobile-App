@@ -1,45 +1,44 @@
  "use client";
 
-import { useState, useRef } from "react";
-import { Plus, Trash2, CheckCircle, ImagePlus, X } from "lucide-react";
-
-/* ── Brand list (matches folder structure) ── */
-const BRANDS = [
-  { label: "Apple",   slug: "apple"   },
-  { label: "Infinix", slug: "infinix" },
-  { label: "Nokia",   slug: "nokia"   },
-  { label: "Oppo",    slug: "oppo"    },
-  { label: "Realme",  slug: "realme"  },
-  { label: "Samsung", slug: "samsung" },
-  { label: "Tecno",   slug: "tecno"   },
-  { label: "Vivo",    slug: "vivo"    },
-  { label: "Xiaomi",  slug: "xiaomi"  },
-];
+import { useState, useRef, useEffect } from "react";
+import { Plus, Trash2, CheckCircle, ImagePlus, X, Loader2 } from "lucide-react";
 
 /* ── Price range mapper ── */
 function getPriceRange(price: number): string {
-  if (price < 15000)             return "under-15k";
-  if (price < 20000)             return "15k-20k";
-  if (price < 30000)             return "20k-30k";
-  if (price < 40000)             return "30k-40k";
-  if (price < 50000)             return "40k-50k";
-  if (price < 70000)             return "50k-70k";
-  if (price < 100000)            return "70k-1lac";
-  return                                "above-1lac";
+  if (price < 15000)  return "under-15k";
+  if (price < 20000)  return "15k-20k";
+  if (price < 30000)  return "20k-30k";
+  if (price < 40000)  return "30k-40k";
+  if (price < 50000)  return "40k-50k";
+  if (price < 70000)  return "50k-70k";
+  if (price < 100000) return "70k-1lac";
+  return "above-1lac";
 }
 
-/* ── Reusable input components ── */
+/* ── Upload image to Cloudinary ── */
+async function uploadToCloudinary(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!);
+
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+    { method: "POST", body: formData }
+  );
+  if (!res.ok) throw new Error("Image upload failed");
+  const data = await res.json();
+  return data.secure_url;
+}
+
+/* ── Reusable components ── */
 const Input = ({ label, value, onChange, placeholder, type = "text", required = false }: any) => (
   <div>
     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
       {label} {required && <span className="text-red-500">*</span>}
     </label>
     <input
-      type={type}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      required={required}
+      type={type} value={value} onChange={onChange}
+      placeholder={placeholder} required={required}
       className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-[#1e3a8a] focus:ring-2 focus:ring-blue-100 transition placeholder-gray-300"
     />
   </div>
@@ -51,9 +50,7 @@ const Select = ({ label, value, onChange, options, required = false }: any) => (
       {label} {required && <span className="text-red-500">*</span>}
     </label>
     <select
-      value={value}
-      onChange={onChange}
-      required={required}
+      value={value} onChange={onChange} required={required}
       className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-[#1e3a8a] focus:ring-2 focus:ring-blue-100 transition bg-white"
     >
       <option value="">— Select —</option>
@@ -62,22 +59,23 @@ const Select = ({ label, value, onChange, options, required = false }: any) => (
   </div>
 );
 
-/* ── Section Card ── */
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-5">
     <div className="bg-gray-50 border-b border-gray-200 px-5 py-3">
       <h3 className="text-sm font-bold text-[#1e3a8a] uppercase tracking-wide">{title}</h3>
     </div>
-    <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-      {children}
-    </div>
+    <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">{children}</div>
   </div>
 );
 
-/* ── Initial State ── */
+/* ── Category type ── */
+interface Category { _id: string; name: string; slug: string; image?: string; }
+
+/* ── Initial form state ── */
 const initForm = {
-  name: "", brand: "", price: "",
+  name: "", brand: "", brandSlug: "", price: "",
   images: [] as string[],
+  imageFiles: [] as File[],
   variants: [{ label: "", price: "" }],
   os: "", ui: "", sim: "", weight: "",
   cameraBack: "", cameraBackVideo: "", cameraFront: "",
@@ -92,78 +90,116 @@ const initForm = {
 };
 
 export default function AddMobilePage() {
-  const [form, setForm] = useState(initForm);
-  const [success, setSuccess] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError]   = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [form, setForm]           = useState(initForm);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [catLoading, setCatLoading] = useState(true);
+  const [success, setSuccess]     = useState(false);
+  const [loading, setLoading]     = useState(false);
+  const [error, setError]         = useState("");
+  const fileInputRef              = useRef<HTMLInputElement>(null);
 
-  const set = (key: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setForm(f => ({ ...f, [key]: e.target.value }));
+  // ── Fetch categories on mount ──
+  useEffect(() => {
+    fetch("/api/categories")
+      .then((r) => r.json())
+      .then((data) => { setCategories(data); setCatLoading(false); })
+      .catch(() => setCatLoading(false));
+  }, []);
 
-  /* ── Image helpers ── */
+  const set = (key: string) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+      setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  // ── Brand select — auto-fill brandSlug ──
+  const handleBrandChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selected = categories.find((c) => c.name === e.target.value);
+    setForm((f) => ({
+      ...f,
+      brand:     selected?.name  ?? "",
+      brandSlug: selected?.slug  ?? "",
+    }));
+  };
+
+  // ── Image helpers ──
   const handleImageFiles = (files: FileList | null) => {
     if (!files) return;
-    Array.from(files).forEach(file => {
+    Array.from(files).forEach((file) => {
       const reader = new FileReader();
       reader.onload = () =>
-        setForm(f => ({ ...f, images: [...f.images, reader.result as string] }));
+        setForm((f) => ({
+          ...f,
+          images:     [...f.images,     reader.result as string],
+          imageFiles: [...f.imageFiles, file],
+        }));
       reader.readAsDataURL(file);
     });
   };
+
   const removeImage = (i: number) =>
-    setForm(f => ({ ...f, images: f.images.filter((_, idx) => idx !== i) }));
+    setForm((f) => ({
+      ...f,
+      images:     f.images.filter((_, idx) => idx !== i),
+      imageFiles: f.imageFiles.filter((_, idx) => idx !== i),
+    }));
 
-  /* ── Variants helpers ── */
-  const addVariant    = () => setForm(f => ({ ...f, variants: [...f.variants, { label: "", price: "" }] }));
-  const removeVariant = (i: number) => setForm(f => ({ ...f, variants: f.variants.filter((_, idx) => idx !== i) }));
+  // ── Variant helpers ──
+  const addVariant    = () => setForm((f) => ({ ...f, variants: [...f.variants, { label: "", price: "" }] }));
+  const removeVariant = (i: number) => setForm((f) => ({ ...f, variants: f.variants.filter((_, idx) => idx !== i) }));
   const setVariant    = (i: number, key: "label" | "price", val: string) =>
-    setForm(f => { const v = [...f.variants]; v[i] = { ...v[i], [key]: val }; return { ...f, variants: v }; });
+    setForm((f) => { const v = [...f.variants]; v[i] = { ...v[i], [key]: val }; return { ...f, variants: v }; });
 
-  /* ── Submit ── */
+  // ── Submit ──
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    const price      = Number(form.price);
-    const brandSlug  = BRANDS.find(b => b.label === form.brand)?.slug ?? form.brand.toLowerCase();
-    const priceRange = getPriceRange(price);
-
-    const body = {
-      name:       form.name,
-      brand:      form.brand,
-      brandSlug,              // e.g. "samsung"  → routes to /samsung
-      priceRange,             // e.g. "30k-40k"  → routes to /mobile/30k-40k
-      price,
-      images:   form.images,
-      variants: form.variants
-        .filter(v => v.label && v.price)
-        .map(v => ({ label: v.label, price: Number(v.price) })),
-      specs: {
-        Build:        { OS: form.os, UI: form.ui, SIM: form.sim, Weight: form.weight },
-        Camera:       { Back: form.cameraBack, "Back Video": form.cameraBackVideo, Front: form.cameraFront },
-        Memory:       { RAM: form.ram, ROM: form.rom, Card: form.card },
-        Battery:      { Capacity: form.batteryCapacity, Charging: form.batteryCharging },
-        Display:      { Technology: form.displayTech, Size: form.displaySize, Resolution: form.displayResolution, Extras: form.displayExtras },
-        Processor:    { Chipset: form.chipset, CPU: form.cpu, GPU: form.gpu },
-        Network:      { "2G": form.net2g, "3G": form.net3g, "4G": form.net4g, "5G": form.net5g },
-        Connectivity: { WLAN: form.wlan, Bluetooth: form.bluetooth, USB: form.usb, NFC: form.nfc },
-        Sensors:      { Fingerprint: form.fingerprint, "Face Unlock": form.faceUnlock, "Other Sensors": form.otherSensors },
-        Sound:        { Speaker: form.speaker, "3.5mm Jack": form.jack },
-      },
-    };
-
     try {
+      // 1. Upload all images to Cloudinary
+      const uploadedUrls: string[] = [];
+      for (const file of form.imageFiles) {
+        const url = await uploadToCloudinary(file);
+        uploadedUrls.push(url);
+      }
+
+      const price      = Number(form.price);
+      const priceRange = getPriceRange(price);
+
+      const body = {
+        name:      form.name,
+        brand:     form.brand,
+        brandSlug: form.brandSlug,
+        priceRange,
+        price,
+        images:   uploadedUrls,
+        variants: form.variants
+          .filter((v) => v.label && v.price)
+          .map((v) => ({ label: v.label, price: Number(v.price) })),
+        specs: {
+          Build:        { OS: form.os, UI: form.ui, SIM: form.sim, Weight: form.weight },
+          Camera:       { Back: form.cameraBack, "Back Video": form.cameraBackVideo, Front: form.cameraFront },
+          Memory:       { RAM: form.ram, ROM: form.rom, Card: form.card },
+          Battery:      { Capacity: form.batteryCapacity, Charging: form.batteryCharging },
+          Display:      { Technology: form.displayTech, Size: form.displaySize, Resolution: form.displayResolution, Extras: form.displayExtras },
+          Processor:    { Chipset: form.chipset, CPU: form.cpu, GPU: form.gpu },
+          Network:      { "2G": form.net2g, "3G": form.net3g, "4G": form.net4g, "5G": form.net5g },
+          Connectivity: { WLAN: form.wlan, Bluetooth: form.bluetooth, USB: form.usb, NFC: form.nfc },
+          Sensors:      { Fingerprint: form.fingerprint, "Face Unlock": form.faceUnlock, "Other Sensors": form.otherSensors },
+          Sound:        { Speaker: form.speaker, "3.5mm Jack": form.jack },
+        },
+      };
+
       const res = await fetch("/api/mobiles", {
-        method:  "POST",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify(body),
+        body: JSON.stringify(body),
       });
+
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Kuch masla hua, dobara try karein");
       }
+
       setSuccess(true);
       setForm(initForm);
       setTimeout(() => setSuccess(false), 3500);
@@ -174,13 +210,8 @@ export default function AddMobilePage() {
     }
   };
 
-  /* ── Price range preview ── */
-  const pricePreview = form.price
-    ? `/${getPriceRange(Number(form.price))}`
-    : null;
-  const brandPreview = form.brand
-    ? `/${BRANDS.find(b => b.label === form.brand)?.slug}`
-    : null;
+  const pricePreview = form.price ? `/${getPriceRange(Number(form.price))}` : null;
+  const brandPreview = form.brandSlug ? `/${form.brandSlug}` : null;
 
   return (
     <form onSubmit={handleSubmit}>
@@ -210,28 +241,41 @@ export default function AddMobilePage() {
           <h3 className="text-sm font-bold text-[#1e3a8a] uppercase tracking-wide">Basic Information</h3>
         </div>
         <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+
           <Input
             label="Mobile Name" value={form.name} onChange={set("name")}
             placeholder="e.g. Samsung Galaxy A55" required
           />
 
-          {/* ── Brand Dropdown ── */}
+          {/* ── Dynamic Brand Dropdown ── */}
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
               Brand <span className="text-red-500">*</span>
             </label>
-            <select
-              value={form.brand}
-              onChange={set("brand")}
-              required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-[#1e3a8a] focus:ring-2 focus:ring-blue-100 transition bg-white"
-            >
-              <option value="">— Brand Chunein —</option>
-              {BRANDS.map(b => (
-                <option key={b.slug} value={b.label}>{b.label}</option>
-              ))}
-            </select>
-            {/* Brand page preview */}
+
+            {catLoading ? (
+              <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2.5 text-gray-400 text-sm">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Loading categories…
+              </div>
+            ) : categories.length === 0 ? (
+              <div className="border border-yellow-200 bg-yellow-50 rounded-lg px-3 py-2.5 text-xs text-yellow-700 font-medium">
+                ⚠ Pehle Admin se category add karein
+              </div>
+            ) : (
+              <select
+                value={form.brand}
+                onChange={handleBrandChange}
+                required
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-[#1e3a8a] focus:ring-2 focus:ring-blue-100 transition bg-white"
+              >
+                <option value="">— Brand Chunein —</option>
+                {categories.map((cat) => (
+                  <option key={cat._id} value={cat.name}>{cat.name}</option>
+                ))}
+              </select>
+            )}
+
             {brandPreview && (
               <p className="text-[10px] text-blue-500 mt-1 font-medium">
                 → Brand page: <span className="font-bold">{brandPreview}</span>
@@ -239,7 +283,7 @@ export default function AddMobilePage() {
             )}
           </div>
 
-          {/* ── Price + range preview ── */}
+          {/* ── Price ── */}
           <div>
             <Input
               label="Base Price (PKR)" value={form.price} onChange={set("price")}
@@ -251,6 +295,7 @@ export default function AddMobilePage() {
               </p>
             )}
           </div>
+
         </div>
       </div>
 
@@ -264,14 +309,14 @@ export default function AddMobilePage() {
           </button>
         </div>
         <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden"
-          onChange={e => handleImageFiles(e.target.files)} />
+          onChange={(e) => handleImageFiles(e.target.files)} />
         <div className="p-5">
           {form.images.length === 0 ? (
             <button type="button" onClick={() => fileInputRef.current?.click()}
               className="w-full flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl py-10 text-gray-400 hover:border-[#1e3a8a] hover:text-[#1e3a8a] hover:bg-blue-50/30 transition-all">
               <ImagePlus className="w-8 h-8" />
               <p className="text-sm font-medium">Click to select images</p>
-              <p className="text-xs">PNG, JPG, WEBP supported</p>
+              <p className="text-xs">PNG, JPG, WEBP supported • Cloudinary pe upload hongi</p>
             </button>
           ) : (
             <div className="flex flex-wrap gap-3">
@@ -311,12 +356,12 @@ export default function AddMobilePage() {
             <div key={i} className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg bg-gray-50">
               <div className="flex-1">
                 <label className="block text-xs text-gray-500 mb-1 font-medium">Label (e.g. 4GB + 128GB)</label>
-                <input value={v.label} onChange={e => setVariant(i, "label", e.target.value)} placeholder="2GB + 64GB"
+                <input value={v.label} onChange={(e) => setVariant(i, "label", e.target.value)} placeholder="2GB + 64GB"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a8a] focus:ring-2 focus:ring-blue-100" />
               </div>
               <div className="flex-1">
                 <label className="block text-xs text-gray-500 mb-1 font-medium">Price (PKR)</label>
-                <input value={v.price} onChange={e => setVariant(i, "price", e.target.value)} placeholder="12999" type="number"
+                <input value={v.price} onChange={(e) => setVariant(i, "price", e.target.value)} placeholder="12999" type="number"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1e3a8a] focus:ring-2 focus:ring-blue-100" />
               </div>
               {form.variants.length > 1 && (
@@ -330,50 +375,44 @@ export default function AddMobilePage() {
         </div>
       </div>
 
-      {/* ── 4. Build ── */}
+      {/* ── 4–13. Specs ── */}
       <Section title="Build">
-        <Input label="OS" value={form.os} onChange={set("os")} placeholder="e.g. Android 14" />
-        <Input label="UI" value={form.ui} onChange={set("ui")} placeholder="e.g. One UI 6" />
-        <Select label="SIM" value={form.sim} onChange={set("sim")} options={["Single SIM", "Dual Nano-SIM", "Dual SIM", "Triple SIM"]} />
+        <Input label="OS"     value={form.os}     onChange={set("os")}     placeholder="e.g. Android 14" />
+        <Input label="UI"     value={form.ui}     onChange={set("ui")}     placeholder="e.g. One UI 6" />
+        <Select label="SIM"   value={form.sim}    onChange={set("sim")}    options={["Single SIM", "Dual Nano-SIM", "Dual SIM", "Triple SIM"]} />
         <Input label="Weight" value={form.weight} onChange={set("weight")} placeholder="e.g. 180 g" />
       </Section>
 
-      {/* ── 5. Camera ── */}
       <Section title="Camera">
         <Input label="Back Camera"  value={form.cameraBack}      onChange={set("cameraBack")}      placeholder="e.g. 50 MP" />
         <Input label="Back Video"   value={form.cameraBackVideo} onChange={set("cameraBackVideo")} placeholder="e.g. 4K@30fps" />
         <Input label="Front Camera" value={form.cameraFront}     onChange={set("cameraFront")}     placeholder="e.g. 13 MP" />
       </Section>
 
-      {/* ── 6. Memory ── */}
       <Section title="Memory">
-        <Input label="RAM"          value={form.ram} onChange={set("ram")} placeholder="e.g. 8 GB" />
+        <Input label="RAM"            value={form.ram} onChange={set("ram")} placeholder="e.g. 8 GB" />
         <Input label="ROM (Internal)" value={form.rom} onChange={set("rom")} placeholder="e.g. 128 GB" />
-        <Select label="Memory Card" value={form.card} onChange={set("card")} options={["MicroSD", "MicroSD (up to 256GB)", "MicroSD (up to 1TB)", "No"]} />
+        <Select label="Memory Card"   value={form.card} onChange={set("card")} options={["MicroSD", "MicroSD (up to 256GB)", "MicroSD (up to 1TB)", "No"]} />
       </Section>
 
-      {/* ── 7. Battery ── */}
       <Section title="Battery">
         <Input label="Capacity" value={form.batteryCapacity} onChange={set("batteryCapacity")} placeholder="e.g. 5000 mAh" />
         <Input label="Charging" value={form.batteryCharging} onChange={set("batteryCharging")} placeholder="e.g. 25W Fast Charging" />
       </Section>
 
-      {/* ── 8. Display ── */}
       <Section title="Display">
-        <Select label="Technology" value={form.displayTech} onChange={set("displayTech")} options={["IPS LCD", "AMOLED", "Super AMOLED", "OLED", "TFT LCD", "LTPO OLED"]} />
-        <Input label="Size"       value={form.displaySize}       onChange={set("displaySize")}       placeholder='e.g. 6.6"' />
-        <Input label="Resolution" value={form.displayResolution} onChange={set("displayResolution")} placeholder="e.g. 1080 x 2400" />
-        <Input label="Extras"     value={form.displayExtras}     onChange={set("displayExtras")}     placeholder="e.g. 120Hz, Always-on" />
+        <Select label="Technology" value={form.displayTech}       onChange={set("displayTech")}       options={["IPS LCD", "AMOLED", "Super AMOLED", "OLED", "TFT LCD", "LTPO OLED"]} />
+        <Input  label="Size"       value={form.displaySize}       onChange={set("displaySize")}       placeholder='e.g. 6.6"' />
+        <Input  label="Resolution" value={form.displayResolution} onChange={set("displayResolution")} placeholder="e.g. 1080 x 2400" />
+        <Input  label="Extras"     value={form.displayExtras}     onChange={set("displayExtras")}     placeholder="e.g. 120Hz, Always-on" />
       </Section>
 
-      {/* ── 9. Processor ── */}
       <Section title="Processor">
         <Input label="Chipset" value={form.chipset} onChange={set("chipset")} placeholder="e.g. Snapdragon 8 Gen 2" />
         <Input label="CPU"     value={form.cpu}     onChange={set("cpu")}     placeholder="e.g. Octa-core" />
         <Input label="GPU"     value={form.gpu}     onChange={set("gpu")}     placeholder="e.g. Adreno 740" />
       </Section>
 
-      {/* ── 10. Network ── */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-5">
         <div className="bg-gray-50 border-b border-gray-200 px-5 py-3">
           <h3 className="text-sm font-bold text-[#1e3a8a] uppercase tracking-wide">Network</h3>
@@ -385,27 +424,24 @@ export default function AddMobilePage() {
         </div>
       </div>
 
-      {/* ── 11. Connectivity ── */}
       <Section title="Connectivity">
-        <Input label="WLAN"      value={form.wlan}      onChange={set("wlan")}      placeholder="e.g. Wi-Fi 802.11 b/g/n" />
-        <Input label="Bluetooth" value={form.bluetooth} onChange={set("bluetooth")} placeholder="e.g. v5.3" />
-        <Select label="USB" value={form.usb} onChange={set("usb")} options={["USB Type-C", "Micro USB", "USB 3.0", "USB 2.0"]} />
-        <Select label="NFC" value={form.nfc} onChange={set("nfc")} options={["Yes", "No"]} />
+        <Input  label="WLAN"      value={form.wlan}      onChange={set("wlan")}      placeholder="e.g. Wi-Fi 802.11 b/g/n" />
+        <Input  label="Bluetooth" value={form.bluetooth} onChange={set("bluetooth")} placeholder="e.g. v5.3" />
+        <Select label="USB"       value={form.usb}       onChange={set("usb")}       options={["USB Type-C", "Micro USB", "USB 3.0", "USB 2.0"]} />
+        <Select label="NFC"       value={form.nfc}       onChange={set("nfc")}       options={["Yes", "No"]} />
       </Section>
 
-      {/* ── 12. Sensors ── */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-5">
         <div className="bg-gray-50 border-b border-gray-200 px-5 py-3">
           <h3 className="text-sm font-bold text-[#1e3a8a] uppercase tracking-wide">Sensors</h3>
         </div>
         <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Select label="Fingerprint" value={form.fingerprint} onChange={set("fingerprint")} options={["Yes", "No", "Side-mounted", "In-display"]} />
-          <Select label="Face Unlock" value={form.faceUnlock}  onChange={set("faceUnlock")}  options={["Yes", "No"]} />
+          <Select label="Fingerprint"   value={form.fingerprint}  onChange={set("fingerprint")}  options={["Yes", "No", "Side-mounted", "In-display"]} />
+          <Select label="Face Unlock"   value={form.faceUnlock}   onChange={set("faceUnlock")}   options={["Yes", "No"]} />
           <Input  label="Other Sensors" value={form.otherSensors} onChange={set("otherSensors")} placeholder="e.g. Accelerometer, Proximity" />
         </div>
       </div>
 
-      {/* ── 13. Sound ── */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-5">
         <div className="bg-gray-50 border-b border-gray-200 px-5 py-3">
           <h3 className="text-sm font-bold text-[#1e3a8a] uppercase tracking-wide">Sound</h3>
@@ -418,9 +454,13 @@ export default function AddMobilePage() {
 
       {/* ── Submit ── */}
       <div className="flex items-center gap-3">
-        <button type="submit" disabled={loading}
-          className="bg-[#1e3a8a] hover:bg-blue-900 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold px-8 py-3 rounded-xl text-sm transition shadow-md">
-          {loading ? "Saving..." : "+ Add Mobile"}
+        <button
+          type="submit"
+          disabled={loading}
+          className="bg-[#1e3a8a] hover:bg-blue-900 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold px-8 py-3 rounded-xl text-sm transition shadow-md flex items-center gap-2"
+        >
+          {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+          {loading ? "Uploading & Saving..." : "+ Add Mobile"}
         </button>
       </div>
     </form>

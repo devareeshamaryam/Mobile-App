@@ -21,9 +21,11 @@ export default function MobileDetailPage({ phone }: { phone: Phone }) {
   const categories = Object.keys(specs);
   const brandSlug = phone.brand.toLowerCase();
 
-  const displayPrice = phone.variants
-    ? phone.variants[selectedVariant].price
-    : phone.price;
+  // ✅ FIX: variants exist kare, empty na ho, aur us index pe item bhi ho
+  const displayPrice =
+    phone.variants && phone.variants.length > 0 && phone.variants[selectedVariant]
+      ? phone.variants[selectedVariant].price
+      : phone.price ?? 0;
 
   const pageUrl = typeof window !== 'undefined' ? window.location.href : '';
   const shareText = `${phone.name} - Rs. ${displayPrice.toLocaleString('en-PK')} - Check price & specs!`;
@@ -104,7 +106,7 @@ export default function MobileDetailPage({ phone }: { phone: Phone }) {
 
             {/* Image with arrows always visible */}
             <div className="flex flex-col items-center justify-center relative min-h-[340px]">
-              
+
               {/* Left Arrow */}
               <button
                 onClick={() => setActiveImg(i => i === 0 ? images.length - 1 : i - 1)}
@@ -155,7 +157,7 @@ export default function MobileDetailPage({ phone }: { phone: Phone }) {
                 </p>
               </div>
 
-              {/* Variants — sirf ek variant */}
+              {/* Variants */}
               {phone.variants && phone.variants.length > 0 && (
                 <div className="mt-5 mb-4">
                   <p className="text-sm text-gray-500 font-medium mb-2">Variants Price</p>
@@ -174,8 +176,6 @@ export default function MobileDetailPage({ phone }: { phone: Phone }) {
                   </div>
                 </div>
               )}
-
-
             </div>
           </div>
         </div>
@@ -198,7 +198,7 @@ export default function MobileDetailPage({ phone }: { phone: Phone }) {
                         {Object.entries(specs[cat]).map(([key, val], idx) => (
                           <tr key={key} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                             <td className="px-4 py-2.5 text-gray-400 font-medium w-2/5 align-top">{key}</td>
-                            <td className="px-4 py-2.5 text-gray-800 align-top">{val}</td>
+                            <td className="px-4 py-2.5 text-gray-800 align-top">{val as string}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -229,7 +229,7 @@ export default function MobileDetailPage({ phone }: { phone: Phone }) {
           </div>
         </div>
 
-             {/* ── DISCOVER MORE ── */}
+        {/* ── DISCOVER MORE ── */}
         <DiscoverMoreResponsive />
 
         {/* Back */}
