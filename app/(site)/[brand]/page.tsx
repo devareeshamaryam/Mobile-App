@@ -1,7 +1,8 @@
-import { notFound } from "next/navigation";
+ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, Smartphone } from "lucide-react";
+import MobileCard from "@/app/components/MobileCard"; // ← Sirf ye add hua
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface Phone {
@@ -75,7 +76,6 @@ export default async function BrandPage({ params }: Props) {
   const { brand }  = await params;
   const category   = await getCategoryBySlug(brand);
 
-  // 404 if category doesn't exist in DB
   if (!category) notFound();
 
   const phones = await getPhonesByBrand(brand);
@@ -129,41 +129,17 @@ export default async function BrandPage({ params }: Props) {
             <p className="text-sm font-medium">No {category.name} mobiles added yet.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {phones.map((phone) => {
-              const img = phone.images?.[0] ?? phone.image ?? null;
-              return (
-                <Link
-                  key={phone._id}
-                  href={`/mobile/${phone._id}`}
-                  className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-200 transition-all group overflow-hidden"
-                >
-                  {/* Image */}
-                  <div className="h-40 bg-gray-50 flex items-center justify-center p-3 relative">
-                    {img ? (
-                      <Image
-                        src={img}
-                        alt={phone.name}
-                        fill
-                        className="object-contain p-3"
-                      />
-                    ) : (
-                      <Smartphone className="w-12 h-12 text-gray-200" />
-                    )}
-                  </div>
-
-                  {/* Info */}
-                  <div className="px-3 py-3 border-t border-gray-100">
-                    <p className="text-sm font-semibold text-gray-800 group-hover:text-[#1e3a8a] transition-colors line-clamp-2 leading-snug">
-                      {phone.name}
-                    </p>
-                    <p className="text-[#1e3a8a] font-bold text-sm mt-1.5">
-                      Rs. {phone.price.toLocaleString("en-PK")}
-                    </p>
-                  </div>
-                </Link>
-              );
-            })}
+          // ← Sirf yahan card replace hua, baaki sab same
+ <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-0">            {phones.map((phone) => (
+              <MobileCard
+                key={phone._id}
+                id={phone._id as any}
+                name={phone.name}
+                price={phone.price}
+                image={phone.images?.[0] ?? phone.image ?? '/placeholder.png'}
+                brand={phone.brandSlug}
+              />
+            ))}
           </div>
         )}
       </div>

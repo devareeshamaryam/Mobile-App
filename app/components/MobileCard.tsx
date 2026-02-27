@@ -31,13 +31,13 @@ export default function MobileCard({ id, image, name, price, brand }: MobileCard
           <h3 className="font-medium text-gray-800 text-xs line-clamp-2 leading-tight group-hover:text-blue-900 transition-colors duration-300">
             {name}
           </h3>
-          <span className="text-blue-600 font-bold text-xs group-hover:text-blue-900 transition-colors duration-300 mt-1">
+          <span className="text-blue-900 font-bold text-xs group-hover:text-blue-900 transition-colors duration-300 mt-1">
             Rs. {price.toLocaleString()}
           </span>
         </div>
 
         {/* Bottom Accent Bar */}
-        <div className="h-0.5 bg-gradient-to-r from-blue-600 via-blue-700 to-blue-900 group-hover:h-1 transition-all duration-300 shrink-0"></div>
+        <div className="h-0.5 bg-gradient-to-r from-blue-900 via-blue-900 to-blue-900 group-hover:h-1 transition-all duration-300 shrink-0"></div>
       </div>
     </Link>
   );
