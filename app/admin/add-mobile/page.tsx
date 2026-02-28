@@ -3,16 +3,13 @@
 import { useState, useRef, useEffect } from "react";
 import { Plus, Trash2, CheckCircle, ImagePlus, X, Loader2 } from "lucide-react";
 
-/* ── Price range mapper ── */
+/* ── Price range mapper — frontend sections ke saath match karta hai ── */
 function getPriceRange(price: number): string {
-  if (price < 15000)  return "under-15k";
-  if (price < 20000)  return "15k-20k";
+  if (price < 20000)  return "10k-20k";
   if (price < 30000)  return "20k-30k";
   if (price < 40000)  return "30k-40k";
   if (price < 50000)  return "40k-50k";
-  if (price < 70000)  return "50k-70k";
-  if (price < 100000) return "70k-1lac";
-  return "above-1lac";
+  return "above-50k";  // 50k+ sab ek hi section mein
 }
 
 /* ── Upload image to Cloudinary ── */
@@ -90,15 +87,14 @@ const initForm = {
 };
 
 export default function AddMobilePage() {
-  const [form, setForm]           = useState(initForm);
+  const [form, setForm]             = useState(initForm);
   const [categories, setCategories] = useState<Category[]>([]);
   const [catLoading, setCatLoading] = useState(true);
-  const [success, setSuccess]     = useState(false);
-  const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState("");
-  const fileInputRef              = useRef<HTMLInputElement>(null);
+  const [success, setSuccess]       = useState(false);
+  const [loading, setLoading]       = useState(false);
+  const [error, setError]           = useState("");
+  const fileInputRef                = useRef<HTMLInputElement>(null);
 
-  // ── Fetch categories on mount ──
   useEffect(() => {
     fetch("/api/categories")
       .then((r) => r.json())
@@ -110,17 +106,15 @@ export default function AddMobilePage() {
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setForm((f) => ({ ...f, [key]: e.target.value }));
 
-  // ── Brand select — auto-fill brandSlug ──
   const handleBrandChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selected = categories.find((c) => c.name === e.target.value);
     setForm((f) => ({
       ...f,
-      brand:     selected?.name  ?? "",
-      brandSlug: selected?.slug  ?? "",
+      brand:     selected?.name ?? "",
+      brandSlug: selected?.slug ?? "",
     }));
   };
 
-  // ── Image helpers ──
   const handleImageFiles = (files: FileList | null) => {
     if (!files) return;
     Array.from(files).forEach((file) => {
@@ -142,20 +136,17 @@ export default function AddMobilePage() {
       imageFiles: f.imageFiles.filter((_, idx) => idx !== i),
     }));
 
-  // ── Variant helpers ──
   const addVariant    = () => setForm((f) => ({ ...f, variants: [...f.variants, { label: "", price: "" }] }));
   const removeVariant = (i: number) => setForm((f) => ({ ...f, variants: f.variants.filter((_, idx) => idx !== i) }));
   const setVariant    = (i: number, key: "label" | "price", val: string) =>
     setForm((f) => { const v = [...f.variants]; v[i] = { ...v[i], [key]: val }; return { ...f, variants: v }; });
 
-  // ── Submit ──
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
     try {
-      // 1. Upload all images to Cloudinary
       const uploadedUrls: string[] = [];
       for (const file of form.imageFiles) {
         const url = await uploadToCloudinary(file);
@@ -210,13 +201,23 @@ export default function AddMobilePage() {
     }
   };
 
-  const pricePreview = form.price ? `/${getPriceRange(Number(form.price))}` : null;
+  const priceNum     = Number(form.price);
+  const priceRange   = form.price ? getPriceRange(priceNum) : null;
+  const pricePreview = priceRange ? `/${priceRange}` : null;
   const brandPreview = form.brandSlug ? `/${form.brandSlug}` : null;
+
+  // Human-readable price range label for preview
+  const priceLabel: Record<string, string> = {
+    "10k-20k":  "Rs. 10,000 – 20,000",
+    "20k-30k":  "Rs. 20,000 – 30,000",
+    "30k-40k":  "Rs. 30,000 – 40,000",
+    "40k-50k":  "Rs. 40,000 – 50,000",
+    "above-50k":"Rs. 50,000+",
+  };
 
   return (
     <form onSubmit={handleSubmit}>
 
-      {/* Error */}
       {error && (
         <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-5 py-4 mb-6 text-red-700">
           <X className="w-5 h-5 text-red-500 flex-shrink-0" />
@@ -224,7 +225,6 @@ export default function AddMobilePage() {
         </div>
       )}
 
-      {/* Success */}
       {success && (
         <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-5 py-4 mb-6 text-green-700">
           <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
@@ -247,16 +247,14 @@ export default function AddMobilePage() {
             placeholder="e.g. Samsung Galaxy A55" required
           />
 
-          {/* ── Dynamic Brand Dropdown ── */}
+          {/* Brand */}
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
               Brand <span className="text-red-500">*</span>
             </label>
-
             {catLoading ? (
               <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2.5 text-gray-400 text-sm">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Loading categories…
+                <Loader2 className="w-4 h-4 animate-spin" /> Loading categories…
               </div>
             ) : categories.length === 0 ? (
               <div className="border border-yellow-200 bg-yellow-50 rounded-lg px-3 py-2.5 text-xs text-yellow-700 font-medium">
@@ -264,9 +262,7 @@ export default function AddMobilePage() {
               </div>
             ) : (
               <select
-                value={form.brand}
-                onChange={handleBrandChange}
-                required
+                value={form.brand} onChange={handleBrandChange} required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:border-[#1e3a8a] focus:ring-2 focus:ring-blue-100 transition bg-white"
               >
                 <option value="">— Brand Chunein —</option>
@@ -275,7 +271,6 @@ export default function AddMobilePage() {
                 ))}
               </select>
             )}
-
             {brandPreview && (
               <p className="text-[10px] text-blue-500 mt-1 font-medium">
                 → Brand page: <span className="font-bold">{brandPreview}</span>
@@ -283,15 +278,16 @@ export default function AddMobilePage() {
             )}
           </div>
 
-          {/* ── Price ── */}
+          {/* Price */}
           <div>
             <Input
               label="Base Price (PKR)" value={form.price} onChange={set("price")}
               placeholder="e.g. 35000" type="number" required
             />
-            {pricePreview && (
+            {priceRange && (
               <p className="text-[10px] text-blue-500 mt-1 font-medium">
-                → Price range page: <span className="font-bold">{pricePreview}</span>
+                → Section: <span className="font-bold">{priceLabel[priceRange]}</span>
+                {" "}(slug: <span className="font-bold">{priceRange}</span>)
               </p>
             )}
           </div>
@@ -375,7 +371,7 @@ export default function AddMobilePage() {
         </div>
       </div>
 
-      {/* ── 4–13. Specs ── */}
+      {/* ── Specs ── */}
       <Section title="Build">
         <Input label="OS"     value={form.os}     onChange={set("os")}     placeholder="e.g. Android 14" />
         <Input label="UI"     value={form.ui}     onChange={set("ui")}     placeholder="e.g. One UI 6" />
@@ -390,8 +386,8 @@ export default function AddMobilePage() {
       </Section>
 
       <Section title="Memory">
-        <Input label="RAM"            value={form.ram} onChange={set("ram")} placeholder="e.g. 8 GB" />
-        <Input label="ROM (Internal)" value={form.rom} onChange={set("rom")} placeholder="e.g. 128 GB" />
+        <Input label="RAM"            value={form.ram}  onChange={set("ram")}  placeholder="e.g. 8 GB" />
+        <Input label="ROM (Internal)" value={form.rom}  onChange={set("rom")}  placeholder="e.g. 128 GB" />
         <Select label="Memory Card"   value={form.card} onChange={set("card")} options={["MicroSD", "MicroSD (up to 256GB)", "MicroSD (up to 1TB)", "No"]} />
       </Section>
 
@@ -455,8 +451,7 @@ export default function AddMobilePage() {
       {/* ── Submit ── */}
       <div className="flex items-center gap-3">
         <button
-          type="submit"
-          disabled={loading}
+          type="submit" disabled={loading}
           className="bg-[#1e3a8a] hover:bg-blue-900 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold px-8 py-3 rounded-xl text-sm transition shadow-md flex items-center gap-2"
         >
           {loading && <Loader2 className="w-4 h-4 animate-spin" />}
