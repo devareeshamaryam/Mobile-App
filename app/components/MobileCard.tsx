@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 interface MobileCardProps {
-  id: number;
+  id: string;  // ✅ number → string
   image: string;
   name: string;
   price: number;
@@ -26,7 +26,7 @@ export default function MobileCard({ id, image, name, price, brand }: MobileCard
           />
         </div>
 
-        {/* Card Content - Fixed height, flex-grow to fill remaining space */}
+        {/* Card Content */}
         <div className="px-2 py-1.5 flex flex-col justify-between flex-1">
           <h3 className="font-medium text-gray-800 text-xs line-clamp-2 leading-tight group-hover:text-blue-900 transition-colors duration-300">
             {name}

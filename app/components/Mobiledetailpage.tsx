@@ -4,8 +4,21 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Smartphone } from 'lucide-react';
-import type { Phone } from '@/lib/allPhones';
 import DiscoverMoreResponsive from './Discovermoreresponsive';
+
+// ── PHONE TYPE ─────────────────────────────────────────────────────────────────
+interface Phone {
+  _id: string;
+  name: string;
+  price: number;
+  image: string;
+  images?: string[];
+  brand: string;
+  brandSlug?: string;
+  priceRange?: string;
+  variants?: { label: string; price: number }[];
+  specs?: Record<string, Record<string, string>>;
+}
 
 export default function MobileDetailPage({ phone }: { phone: Phone }) {
   const [activeImg, setActiveImg] = useState(0);
@@ -19,9 +32,8 @@ export default function MobileDetailPage({ phone }: { phone: Phone }) {
 
   const specs = phone.specs ?? {};
   const categories = Object.keys(specs);
-  const brandSlug = phone.brand.toLowerCase();
+  const brandSlug = phone.brandSlug ?? phone.brand.toLowerCase();
 
-  // ✅ FIX: variants exist kare, empty na ho, aur us index pe item bhi ho
   const displayPrice =
     phone.variants && phone.variants.length > 0 && phone.variants[selectedVariant]
       ? phone.variants[selectedVariant].price
@@ -104,10 +116,8 @@ export default function MobileDetailPage({ phone }: { phone: Phone }) {
         <div className="bg-white rounded-xl shadow-sm mb-6 p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
-            {/* Image with arrows always visible */}
+            {/* Image */}
             <div className="flex flex-col items-center justify-center relative min-h-[340px]">
-
-              {/* Left Arrow */}
               <button
                 onClick={() => setActiveImg(i => i === 0 ? images.length - 1 : i - 1)}
                 className="absolute left-0 top-1/2 -translate-y-1/2 w-8 h-8 bg-white border border-gray-200 rounded-full shadow flex items-center justify-center hover:bg-[#1e3a8a] hover:text-white hover:border-[#1e3a8a] transition-all z-10"
@@ -115,7 +125,6 @@ export default function MobileDetailPage({ phone }: { phone: Phone }) {
                 <ChevronLeft className="w-4 h-4" />
               </button>
 
-              {/* Image */}
               {images[activeImg] ? (
                 <div className="relative w-52 h-72">
                   <Image src={images[activeImg]} alt={phone.name} fill className="object-contain" priority />
@@ -126,7 +135,6 @@ export default function MobileDetailPage({ phone }: { phone: Phone }) {
                 </div>
               )}
 
-              {/* Right Arrow */}
               <button
                 onClick={() => setActiveImg(i => i === images.length - 1 ? 0 : i + 1)}
                 className="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-8 bg-white border border-gray-200 rounded-full shadow flex items-center justify-center hover:bg-[#1e3a8a] hover:text-white hover:border-[#1e3a8a] transition-all z-10"
@@ -134,7 +142,6 @@ export default function MobileDetailPage({ phone }: { phone: Phone }) {
                 <ChevronRight className="w-4 h-4" />
               </button>
 
-              {/* Dots */}
               {images.length > 1 && (
                 <div className="flex gap-2 mt-4">
                   {images.map((_, i) => (
@@ -149,7 +156,6 @@ export default function MobileDetailPage({ phone }: { phone: Phone }) {
             <div className="flex flex-col justify-center">
               <h1 className="text-2xl font-bold text-gray-900 mb-4">{phone.name}</h1>
 
-              {/* Price */}
               <div className="mb-1">
                 <p className="text-sm text-gray-500 font-medium mb-1">Price</p>
                 <p className="text-3xl font-bold text-[#1e3a8a]">
@@ -157,20 +163,22 @@ export default function MobileDetailPage({ phone }: { phone: Phone }) {
                 </p>
               </div>
 
-              {/* Variants */}
               {phone.variants && phone.variants.length > 0 && (
                 <div className="mt-5 mb-4">
                   <p className="text-sm text-gray-500 font-medium mb-2">Variants Price</p>
                   <div className="flex flex-col gap-2">
-                    {phone.variants.slice(0, 1).map((v, i) => (
+                    {phone.variants.map((v, i) => (
                       <div
                         key={i}
-                        className="inline-flex items-center gap-6 px-4 py-2.5 rounded-lg border border-[#1e3a8a] bg-blue-50 text-sm font-medium w-fit"
+                        onClick={() => setSelectedVariant(i)}
+                        className={`inline-flex items-center gap-6 px-4 py-2.5 rounded-lg border text-sm font-medium w-fit cursor-pointer transition-all ${
+                          selectedVariant === i
+                            ? 'border-[#1e3a8a] bg-blue-50'
+                            : 'border-gray-200 hover:border-[#1e3a8a]'
+                        }`}
                       >
                         <span className="text-[#1e3a8a] font-semibold">{v.label}</span>
-                        <span className="text-gray-800 font-bold">
-                          RS. {v.price.toLocaleString('en-PK')}
-                        </span>
+                        <span className="text-gray-800 font-bold">RS. {v.price.toLocaleString('en-PK')}</span>
                       </div>
                     ))}
                   </div>
@@ -239,7 +247,6 @@ export default function MobileDetailPage({ phone }: { phone: Phone }) {
             Back to {phone.brand} Mobiles
           </Link>
         </div>
-
       </div>
     </div>
   );
