@@ -2,7 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, Smartphone } from "lucide-react";
-import MobileCard from "@/app/components/MobileCard"; // ← Sirf ye add hua
+import MobileCard from "@/app/components/MobileCard";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface Phone {
@@ -31,7 +31,7 @@ interface Props {
 function getBaseUrl() {
   if (process.env.NEXT_PUBLIC_BASE_URL) return process.env.NEXT_PUBLIC_BASE_URL;
   if (process.env.VERCEL_URL)           return `https://${process.env.VERCEL_URL}`;
-  return "http://localhost:3000";
+  return "http://localhost:3010"; // ✅ 3000 → 3010
 }
 
 // ── Data fetchers ──────────────────────────────────────────────────────────────
@@ -98,18 +98,11 @@ export default async function BrandPage({ params }: Props) {
         <div className="bg-white rounded-xl shadow-sm mb-6 px-6 py-5 flex items-center gap-5">
           {category.image ? (
             <div className="relative w-16 h-16 shrink-0">
-              <Image
-                src={category.image}
-                alt={category.name}
-                fill
-                className="object-contain"
-              />
+              <Image src={category.image} alt={category.name} fill className="object-contain" />
             </div>
           ) : (
             <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-              <span className="text-2xl font-bold text-[#1e3a8a]">
-                {category.name.charAt(0)}
-              </span>
+              <span className="text-2xl font-bold text-[#1e3a8a]">{category.name.charAt(0)}</span>
             </div>
           )}
           <div>
@@ -129,15 +122,15 @@ export default async function BrandPage({ params }: Props) {
             <p className="text-sm font-medium">No {category.name} mobiles added yet.</p>
           </div>
         ) : (
-          // ← Sirf yahan card replace hua, baaki sab same
- <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-0">            {phones.map((phone) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            {phones.map((phone) => (
               <MobileCard
                 key={phone._id}
-                id={phone._id as any}
+                id={phone._id}
                 name={phone.name}
                 price={phone.price}
                 image={phone.images?.[0] ?? phone.image ?? '/placeholder.png'}
-                brand={phone.brandSlug}
+                brand={phone.brand}
               />
             ))}
           </div>

@@ -3,10 +3,9 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Smartphone } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Smartphone, GitCompareArrows } from 'lucide-react';
 import DiscoverMoreResponsive from './Discovermoreresponsive';
 
-// ── PHONE TYPE ─────────────────────────────────────────────────────────────────
 interface Phone {
   _id: string;
   name: string;
@@ -184,6 +183,17 @@ export default function MobileDetailPage({ phone }: { phone: Phone }) {
                   </div>
                 </div>
               )}
+
+              {/* ── COMPARE BUTTON ── fixed: mobile1 instead of phone ── */}
+              <div className="mt-5">
+                <Link
+                  href={`/compare?mobile1=${phone._id}`}
+                  className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-3 bg-[#1e3a8a] hover:bg-[#162d6e] active:bg-[#0f2050] text-white font-semibold text-sm rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+                >
+                  <GitCompareArrows className="w-5 h-5" />
+                  Compare
+                </Link>
+              </div>
             </div>
           </div>
         </div>
