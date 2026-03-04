@@ -2,9 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import AdminShell from "../components/Adminshell";
 import {
-  Eye,
   Pencil,
   Trash2,
   Loader2,
@@ -127,12 +125,12 @@ function MobilesTable() {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-100">
-              <th className="text-left px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">#</th>
+              <th className="text-left px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-12">#</th>
               <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Mobile Name</th>
-              <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Brand</th>
-              <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Price</th>
-              <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Condition</th>
-              <th className="text-center px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
+              <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-28">Brand</th>
+              <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-32">Price</th>
+              <th className="text-left px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-28">Condition</th>
+              <th className="text-center px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider w-24">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
@@ -148,8 +146,10 @@ function MobilesTable() {
                     {mobile.brand}
                   </span>
                 </td>
-                <td className="px-4 py-4 text-gray-700 font-medium">
-                  {mobile.price ? `Rs ${mobile.price.toLocaleString("en-PK")}` : mobile.priceRange ?? "—"}
+                <td className="px-4 py-4 text-gray-700 font-medium tabular-nums">
+                  {mobile.price && mobile.price > 0
+                    ? `Rs ${mobile.price.toLocaleString("en-PK")}`
+                    : mobile.priceRange ?? <span className="text-gray-300">—</span>}
                 </td>
                 <td className="px-4 py-4">
                   {mobile.condition
@@ -158,9 +158,22 @@ function MobilesTable() {
                 </td>
                 <td className="px-4 py-4">
                   <div className="flex items-center justify-center gap-1">
-                    <Link href={`/admin/mobiles/${mobile._id}`} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-blue-100 text-gray-400 hover:text-[#1e3a8a] transition-all" title="View"><Eye className="w-4 h-4" /></Link>
-                    <Link href={`/admin/mobiles/${mobile._id}/edit`} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-amber-100 text-gray-400 hover:text-amber-600 transition-all" title="Edit"><Pencil className="w-4 h-4" /></Link>
-                    <button onClick={() => handleDelete(mobile._id)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-100 text-gray-400 hover:text-red-600 transition-all" title="Delete"><Trash2 className="w-4 h-4" /></button>
+                    {/* Edit — redirects to edit page */}
+                    <Link
+                      href={`/admin/mobiles/${mobile._id}/edit`}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-amber-100 text-gray-400 hover:text-amber-600 transition-all"
+                      title="Edit"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Link>
+                    {/* Delete */}
+                    <button
+                      onClick={() => handleDelete(mobile._id)}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-100 text-gray-400 hover:text-red-600 transition-all"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -168,7 +181,7 @@ function MobilesTable() {
           </tbody>
         </table>
       </div>
-      <div ref={loaderRef} className="flex items-center justify-center py-5">
+      <div ref={loaderRef} className="flex items-center justify-center py-5 border-t border-gray-50">
         {loadingMore && <div className="flex items-center gap-2 text-xs text-gray-400"><Loader2 className="w-4 h-4 animate-spin" />Loading more…</div>}
         {!hasMore && !loadingMore && <p className="text-xs text-gray-400">All {allMobiles.length} devices loaded ✓</p>}
       </div>
@@ -176,11 +189,6 @@ function MobilesTable() {
   );
 }
 
-// ── PAGE ──────────────────────────────────────────────────────────────────────
 export default function AllMobilesPage() {
-  return (
-    <AdminShell>
-      <MobilesTable />
-    </AdminShell>
-  );
+  return <MobilesTable />;
 }

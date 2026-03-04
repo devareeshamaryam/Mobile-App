@@ -2,7 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, Smartphone } from "lucide-react";
-import MobileCard from "@/app/components/MobileCard";
+import BrandClientView from "@/app/components/BrandClientView";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface Phone {
@@ -14,6 +14,10 @@ interface Phone {
   priceRange?: string;
   images?: string[];
   image?: string;
+  specs?: {
+    Memory?: { RAM?: string };
+  };
+  condition?: string;
 }
 
 interface Category {
@@ -31,7 +35,7 @@ interface Props {
 function getBaseUrl() {
   if (process.env.NEXT_PUBLIC_BASE_URL) return process.env.NEXT_PUBLIC_BASE_URL;
   if (process.env.VERCEL_URL)           return `https://${process.env.VERCEL_URL}`;
-  return "http://localhost:3010"; // ✅ 3000 → 3010
+  return "http://localhost:3010";
 }
 
 // ── Data fetchers ──────────────────────────────────────────────────────────────
@@ -73,8 +77,8 @@ export async function generateMetadata({ params }: Props) {
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 export default async function BrandPage({ params }: Props) {
-  const { brand }  = await params;
-  const category   = await getCategoryBySlug(brand);
+  const { brand } = await params;
+  const category  = await getCategoryBySlug(brand);
 
   if (!category) notFound();
 
@@ -95,7 +99,7 @@ export default async function BrandPage({ params }: Props) {
       <div className="max-w-6xl mx-auto px-4 md:px-6 py-6">
 
         {/* ── Brand Hero ── */}
-        <div className="bg-white rounded-xl shadow-sm mb-6 px-6 py-5 flex items-center gap-5">
+        <div className="bg-white rounded-xl shadow-sm mb-3 px-6 py-5 flex items-center gap-5">
           {category.image ? (
             <div className="relative w-16 h-16 shrink-0">
               <Image src={category.image} alt={category.name} fill className="object-contain" />
@@ -115,26 +119,16 @@ export default async function BrandPage({ params }: Props) {
           </div>
         </div>
 
-        {/* ── Phones Grid ── */}
+        {/* ── Phones Grid + Filters ── */}
         {phones.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm p-16 flex flex-col items-center justify-center gap-3 text-gray-400">
             <Smartphone className="w-12 h-12 opacity-20" />
             <p className="text-sm font-medium">No {category.name} mobiles added yet.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {phones.map((phone) => (
-              <MobileCard
-                key={phone._id}
-                id={phone._id}
-                name={phone.name}
-                price={phone.price}
-                image={phone.images?.[0] ?? phone.image ?? '/placeholder.png'}
-                brand={phone.brand}
-              />
-            ))}
-          </div>
+          <BrandClientView phones={phones} brandName={category.name} />
         )}
+
       </div>
     </div>
   );

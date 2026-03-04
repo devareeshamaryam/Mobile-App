@@ -17,16 +17,22 @@ interface Phone {
   specs?: Record<string, Record<string, string>>;
 }
 
-const MAX_PHONES = 4;
+// ── Responsive max phones hook ─────────────────────────────────────────────────
+function useMaxPhones() {
+  const [maxPhones, setMaxPhones] = useState(4);
+  useEffect(() => {
+    const update = () => setMaxPhones(window.innerWidth < 768 ? 2 : 4);
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+  return maxPhones;
+}
 
-// ── Safely parse specs from Mongoose lean() response ──────────────────────────
+// ── Safely parse specs ─────────────────────────────────────────────────────────
 function normalizeSpecs(specs: any): Record<string, Record<string, string>> {
   if (!specs || typeof specs !== 'object') return {};
-  try {
-    return JSON.parse(JSON.stringify(specs));
-  } catch {
-    return {};
-  }
+  try { return JSON.parse(JSON.stringify(specs)); } catch { return {}; }
 }
 
 function buildSpecMatrix(phones: Phone[]) {
@@ -42,18 +48,15 @@ function buildSpecMatrix(phones: Phone[]) {
   return categoryMap;
 }
 
-// ── Fetch full phone by ID (includes specs) ───────────────────────────────────
 async function fetchFullPhone(id: string): Promise<Phone | null> {
   try {
     const res = await fetch(`/api/mobiles/${id}`);
     if (!res.ok) return null;
-    return await res.json(); // existing route returns mobile directly
-  } catch {
-    return null;
-  }
+    return await res.json();
+  } catch { return null; }
 }
 
-// ── SEARCH DROPDOWN ────────────────────────────────────────────────────────────
+// ── SEARCH BOX ─────────────────────────────────────────────────────────────────
 function PhoneSearchBox({ onSelect, excludeIds }: {
   onSelect: (phone: Phone) => void;
   excludeIds: string[];
@@ -85,11 +88,8 @@ function PhoneSearchBox({ onSelect, excludeIds }: {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // ── When user clicks a search result, fetch FULL data (with specs) ──────────
   async function handleSelect(p: Phone) {
-    setQuery('');
-    setResults([]);
-    setLoading(true);
+    setQuery(''); setResults([]); setLoading(true);
     const full = await fetchFullPhone(p._id);
     setLoading(false);
     onSelect(full ?? p);
@@ -112,11 +112,8 @@ function PhoneSearchBox({ onSelect, excludeIds }: {
       {results.length > 0 && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
           {results.map((p) => (
-            <button
-              key={p._id}
-              onClick={() => handleSelect(p)}
-              className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-blue-50 transition-colors text-left"
-            >
+            <button key={p._id} onClick={() => handleSelect(p)}
+              className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-blue-50 transition-colors text-left">
               {p.images?.[0] ? (
                 <div className="relative w-8 h-10 shrink-0">
                   <Image src={p.images[0]} alt={p.name} fill className="object-contain" />
@@ -159,10 +156,8 @@ function PhoneCard({ phone, onRemove, onSelect, excludeIds }: {
 
   return (
     <div className="flex flex-col items-center gap-2 p-4 relative">
-      <button
-        onClick={onRemove}
-        className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-200 transition-colors"
-      >
+      <button onClick={onRemove}
+        className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-200 transition-colors">
         <X className="w-3.5 h-3.5 text-red-500" />
       </button>
       {image ? (
@@ -184,11 +179,11 @@ function PhoneCard({ phone, onRemove, onSelect, excludeIds }: {
 function CompareContent() {
   const router       = useRouter();
   const searchParams = useSearchParams();
+  const maxPhones    = useMaxPhones(); // ✅ 2 on mobile, 4 on desktop
 
   const [phones, setPhones]             = useState<(Phone | null)[]>([null, null, null, null]);
   const [loadingSlots, setLoadingSlots] = useState<boolean[]>([false, false, false, false]);
 
-  // Load phones from URL params on mount — full data including specs
   useEffect(() => {
     const ids = [
       searchParams.get('mobile1'),
@@ -200,9 +195,7 @@ function CompareContent() {
       if (!id) return;
       setLoadingSlots((prev) => { const n = [...prev]; n[i] = true; return n; });
       const phone = await fetchFullPhone(id);
-      if (phone) {
-        setPhones((prev) => { const n = [...prev]; n[i] = phone; return n; });
-      }
+      if (phone) setPhones((prev) => { const n = [...prev]; n[i] = phone; return n; });
       setLoadingSlots((prev) => { const n = [...prev]; n[i] = false; return n; });
     });
   }, []);
@@ -222,31 +215,44 @@ function CompareContent() {
 
   function handleRemove(index: number) {
     const updated = phones.filter((_, i) => i !== index);
-    while (updated.length < MAX_PHONES) updated.push(null);
+    while (updated.length < 4) updated.push(null);
     setPhones(updated);
     updateUrl(updated);
   }
 
   const activePhones  = phones.filter(Boolean) as Phone[];
   const activeCount   = activePhones.length;
-  const visibleCount  = Math.min(MAX_PHONES, Math.max(2, activeCount + 1));
+
+  // ✅ visibleCount respects maxPhones (2 mobile / 4 desktop)
+  const visibleCount  = Math.min(maxPhones, Math.max(2, activeCount + (activeCount < maxPhones ? 1 : 0)));
   const visiblePhones = phones.slice(0, visibleCount);
   const excludeIds    = activePhones.map((p) => p._id);
 
   const categoryMap = buildSpecMatrix(activePhones);
   const categories  = Object.keys(categoryMap);
-  const gridCols    = ['', '', 'grid-cols-2', 'grid-cols-3', 'grid-cols-4'][visibleCount] ?? 'grid-cols-2';
+
+  // Grid cols based on visibleCount
+  const gridCols = {
+    2: 'grid-cols-2',
+    3: 'grid-cols-3',
+    4: 'grid-cols-4',
+  }[visibleCount] ?? 'grid-cols-2';
 
   return (
     <div className="max-w-6xl mx-auto px-3 md:px-6 py-6">
 
-      <h1 className="text-xl md:text-2xl font-bold text-[#1e3a8a] text-center mb-6 flex items-center justify-center gap-2">
+      <h1 className="text-xl md:text-2xl font-bold text-[#1e3a8a] text-center mb-1 flex items-center justify-center gap-2">
         <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-[#1e3a8a] stroke-2">
           <rect x="2" y="3" width="8" height="18" rx="1.5"/>
           <rect x="14" y="3" width="8" height="18" rx="1.5"/>
         </svg>
         Mobiles Comparison
       </h1>
+
+      {/* ✅ Responsive hint */}
+      <p className="text-center text-xs text-gray-400 mb-6">
+        {maxPhones === 2 ? 'Compare up to 2 mobiles' : 'Compare up to 4 mobiles'}
+      </p>
 
       {/* ── PHONE CARDS ── */}
       <div className="bg-white rounded-xl shadow-sm mb-6 overflow-hidden">
@@ -277,25 +283,20 @@ function CompareContent() {
             const keys = Array.from(categoryMap[cat]);
             return (
               <div key={cat}>
-                {/* Category header */}
                 <div className="px-4 py-3 bg-gray-50 border-y border-gray-100">
                   <h2 className="text-sm font-bold text-[#1e3a8a] italic">{cat}</h2>
                 </div>
-
-                {/* Spec key row (centered label) */}
                 {keys.map((key, idx) => (
                   <div key={key}>
-                    {/* Key label centered */}
                     <div className="text-center py-1.5 border-b border-gray-50 bg-gray-50/30">
                       <span className="text-xs text-gray-400 font-medium">{key}</span>
                     </div>
-                    {/* Values row */}
                     <div className={`grid ${gridCols} divide-x divide-gray-100 border-b border-gray-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}`}>
                       {visiblePhones.map((phone, i) => {
                         const specs = normalizeSpecs(phone?.specs);
                         const val   = specs[cat]?.[key];
                         return (
-                          <div key={i} className="px-4 py-2.5 min-w-0">
+                          <div key={i} className="px-3 py-2.5 min-w-0">
                             <p className={`text-xs md:text-sm leading-snug ${val ? 'text-gray-800 font-medium' : 'text-gray-300'}`}>
                               {val ?? '—'}
                             </p>
@@ -318,8 +319,6 @@ function CompareContent() {
           <p className="text-gray-400 text-sm font-medium">Search for phones above to start comparing</p>
         </div>
       )}
-
-      {/* No specs message */}
       {categories.length === 0 && activeCount > 0 && (
         <div className="bg-white rounded-xl shadow-sm p-8 text-center">
           <p className="text-gray-400 text-sm font-medium">No specs available for selected phones</p>

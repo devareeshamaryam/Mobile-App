@@ -106,7 +106,9 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         {/* User */}
         <div className="px-3 pb-5 border-t border-blue-700 pt-4">
           <div className="flex items-center gap-3 px-3 py-2 rounded-lg">
-            <div className="w-8 h-8 bg-blue-200 rounded-full flex items-center justify-center text-[#1e3a8a] font-bold text-sm">A</div>
+            <div className="w-8 h-8 bg-blue-200 rounded-full flex items-center justify-center text-[#1e3a8a] font-bold text-sm">
+              A
+            </div>
             <div className="flex-1 min-w-0">
               <p className="text-white text-sm font-semibold truncate">Admin</p>
               <p className="text-blue-300 text-xs truncate">admin@hafeez.pk</p>
@@ -118,8 +120,8 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       {/* ── RIGHT SIDE ── */}
       <div className="ml-64 flex-1 flex flex-col min-h-screen">
 
-        {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between shadow-sm sticky top-0 z-40">
+        {/* ── HEADER — sirf ek baar render hota hai ── */}
+        <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm sticky top-0 z-40">
           <div className="flex items-center gap-4">
             <div className="w-1 h-10 bg-[#1e3a8a] rounded-full" />
             <div>
@@ -135,7 +137,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
               <Tag className="w-3.5 h-3.5" />
               Add Category
             </Link>
-            <div className="flex items-center gap-2 text-xs text-gray-400">
+            <div className="hidden sm:flex items-center gap-2 text-xs text-gray-400">
               <span className="text-[#1e3a8a] font-semibold">Admin</span>
               <span>›</span>
               <span className="text-gray-600 font-medium">{meta.title}</span>
@@ -143,8 +145,8 @@ export default function AdminShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        {/* ✅ Sirf children — koi conditional logic nahi */}
-        <main className="flex-1 p-8">
+        {/* ── MAIN — left-aligned, full width ── */}
+        <main className="flex-1 p-4 md:p-6">
           {children}
         </main>
       </div>
