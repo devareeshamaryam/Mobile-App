@@ -4,16 +4,17 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 interface MobileCardProps {
-  id: string;  // ✅ number → string
+  id: string;
   image: string;
   name: string;
   price: number;
   brand: string;
+  brandSlug: string;
 }
 
-export default function MobileCard({ id, image, name, price, brand }: MobileCardProps) {
+export default function MobileCard({ id, image, name, price, brand, brandSlug }: MobileCardProps) {
   return (
-    <Link href={`/mobile/${id}`}>
+    <Link href={`/${brandSlug}/${id}`}>
       <div className="group relative bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer border border-gray-200 hover:border-blue-900 w-36 h-52 flex flex-col">
         
         {/* Mobile Image - Fixed Square */}

@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Admin panel crawl nahi hoga
+Disallow: /admin/
+Disallow: /zm-secure-entry/
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://zmobiles.pk/sitemap.xml

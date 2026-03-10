@@ -72,6 +72,9 @@ export async function generateMetadata({ params }: Props) {
   return {
     title:       `${category.name} Mobile Prices in Pakistan 2026 — Hafeez Centre`,
     description: `Latest ${category.name} mobile prices in Pakistan. Compare specs and prices.`,
+    alternates: {
+      canonical: `https://zmobiles.pk/${brand}`,
+    },
   };
 }
 

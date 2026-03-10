@@ -4,11 +4,12 @@ import { useRef, useEffect, useState } from 'react';
 import MobileCard from './MobileCard';
 
 interface Mobile {
-  id: string;  // ✅ string
+  id: string;
   image: string;
   name: string;
   price: number;
   brand: string;
+  brandSlug: string;
 }
 
 interface Price30to40kSectionProps {
@@ -50,9 +51,7 @@ export default function Price30to40kSection({ mobiles }: Price30to40kSectionProp
     <section className="mb-8">
       <div className="flex items-center justify-between mb-3">
         <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-1">
-            Mobile Phones price in Pakistan Rs. 30,000 - Rs. 40,000
-          </h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-1">Mobile Phones price in Pakistan Rs. 30,000 - Rs. 40,000</h2>
           <div className="h-0.5 w-16 bg-gradient-to-r from-blue-600 to-blue-900 rounded-full"></div>
         </div>
         <div className="flex items-center gap-1.5">
@@ -81,7 +80,14 @@ export default function Price30to40kSection({ mobiles }: Price30to40kSectionProp
       >
         {mobiles.map((mobile) => (
           <div key={mobile.id} className="flex-shrink-0">
-            <MobileCard id={mobile.id} image={mobile.image} name={mobile.name} price={mobile.price} brand={mobile.brand} />
+            <MobileCard
+              id={mobile.id}
+              image={mobile.image}
+              name={mobile.name}
+              price={mobile.price}
+              brand={mobile.brand}
+              brandSlug={mobile.brandSlug}
+            />
           </div>
         ))}
       </div>

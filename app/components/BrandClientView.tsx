@@ -34,7 +34,7 @@ const PRICE_RANGES = [
 ];
 
 const SORT_OPTIONS = [
-  { label: "Default",         value: "default"    },
+  { label: "Default",           value: "default"    },
   { label: "Price: Low → High", value: "price_asc"  },
   { label: "Price: High → Low", value: "price_desc" },
 ];
@@ -74,7 +74,7 @@ export default function BrandClientView({ phones, brandName }: Props) {
   const [sortBy,              setSortBy              ] = useState("default");
   const [sidebarOpen,         setSidebarOpen         ] = useState(false);
 
-  // ── Derive unique RAM values from data ─────────────────────────────────────
+  // ── Derive unique RAM values from data ────────────────────────────────────
   const availableRAMs = useMemo(() => {
     const rams = phones
       .map((p) => p.specs?.Memory?.RAM)
@@ -82,17 +82,17 @@ export default function BrandClientView({ phones, brandName }: Props) {
     return [...new Set(rams)].sort();
   }, [phones]);
 
-  // ── Derive unique conditions ───────────────────────────────────────────────
+  // ── Derive unique conditions ──────────────────────────────────────────────
   const availableConditions = useMemo(() => {
     const conds = phones.map((p) => p.condition).filter(Boolean) as string[];
     return [...new Set(conds)];
   }, [phones]);
 
-  // ── Toggle helpers ─────────────────────────────────────────────────────────
+  // ── Toggle helpers ────────────────────────────────────────────────────────
   const toggle = (arr: string[], val: string, set: (v: string[]) => void) =>
     set(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
 
-  // ── Active filter count ────────────────────────────────────────────────────
+  // ── Active filter count ───────────────────────────────────────────────────
   const activeCount =
     selectedPriceRanges.length + selectedRAMs.length + selectedConditions.length +
     (sortBy !== "default" ? 1 : 0);
@@ -105,11 +105,10 @@ export default function BrandClientView({ phones, brandName }: Props) {
     setSortBy("default");
   };
 
-  // ── Filtered + sorted phones ───────────────────────────────────────────────
+  // ── Filtered + sorted phones ──────────────────────────────────────────────
   const filtered = useMemo(() => {
     let result = [...phones];
 
-    // Price range filter
     if (selectedPriceRanges.length > 0) {
       result = result.filter((p) =>
         selectedPriceRanges.some((label) => {
@@ -119,31 +118,27 @@ export default function BrandClientView({ phones, brandName }: Props) {
       );
     }
 
-    // RAM filter
     if (selectedRAMs.length > 0) {
       result = result.filter((p) =>
         selectedRAMs.includes(p.specs?.Memory?.RAM ?? "")
       );
     }
 
-    // Condition filter
     if (selectedConditions.length > 0) {
       result = result.filter((p) =>
         selectedConditions.includes(p.condition ?? "")
       );
     }
 
-    // Sort
     if (sortBy === "price_asc")  result.sort((a, b) => a.price - b.price);
     if (sortBy === "price_desc") result.sort((a, b) => b.price - a.price);
 
     return result;
   }, [phones, selectedPriceRanges, selectedRAMs, selectedConditions, sortBy]);
 
-  // ── Sidebar content (shared between desktop + mobile) ──────────────────────
+  // ── Sidebar content (shared between desktop + mobile) ─────────────────────
   const SidebarContent = () => (
     <div className="p-5">
-      {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <SlidersHorizontal className="w-4 h-4 text-[#1e3a8a]" />
@@ -161,7 +156,6 @@ export default function BrandClientView({ phones, brandName }: Props) {
         )}
       </div>
 
-      {/* Sort */}
       <FilterSection title="Sort By">
         <div className="flex flex-col gap-1">
           {SORT_OPTIONS.map((opt) => (
@@ -181,7 +175,6 @@ export default function BrandClientView({ phones, brandName }: Props) {
         </div>
       </FilterSection>
 
-      {/* Price Range */}
       <FilterSection title="Price Range">
         <div className="flex flex-col gap-1">
           {PRICE_RANGES.map((r) => (
@@ -195,7 +188,6 @@ export default function BrandClientView({ phones, brandName }: Props) {
         </div>
       </FilterSection>
 
-      {/* RAM */}
       {availableRAMs.length > 0 && (
         <FilterSection title="RAM">
           <div className="flex flex-col gap-1">
@@ -211,7 +203,6 @@ export default function BrandClientView({ phones, brandName }: Props) {
         </FilterSection>
       )}
 
-      {/* Condition */}
       {availableConditions.length > 0 && (
         <FilterSection title="Condition">
           <div className="flex flex-col gap-1">
@@ -232,9 +223,8 @@ export default function BrandClientView({ phones, brandName }: Props) {
   return (
     <div className="flex flex-col lg:flex-row gap-4 items-start">
 
-      {/* ── Phones Grid ───────────────────────────────────────────────────── */}
+      {/* ── Phones Grid ──────────────────────────────────────────────────── */}
       <div className="w-full lg:min-w-0">
-        {/* Mobile filter button */}
         <div className="flex items-center justify-between mb-4 lg:hidden">
           <p className="text-sm text-gray-500">{filtered.length} result{filtered.length !== 1 ? "s" : ""}</p>
           <button
@@ -246,7 +236,6 @@ export default function BrandClientView({ phones, brandName }: Props) {
           </button>
         </div>
 
-        {/* Result count — desktop */}
         <p className="hidden lg:block text-xs text-gray-400 mb-2 font-medium">
           {filtered.length} of {phones.length} mobiles
         </p>
@@ -267,18 +256,19 @@ export default function BrandClientView({ phones, brandName }: Props) {
                 price={phone.price}
                 image={phone.images?.[0] ?? phone.image ?? "/placeholder.png"}
                 brand={phone.brand}
+                brandSlug={phone.brandSlug}  // ← updated
               />
             ))}
           </div>
         )}
       </div>
 
-      {/* ── Right Sidebar — Desktop ────────────────────────────────────────── */}
+      {/* ── Right Sidebar — Desktop ───────────────────────────────────────── */}
       <aside className="hidden lg:block w-52 shrink-0 bg-white rounded-xl shadow-sm border border-gray-100 self-start sticky top-4">
         <SidebarContent />
       </aside>
 
-      {/* ── Right Sidebar — Mobile drawer ─────────────────────────────────── */}
+      {/* ── Right Sidebar — Mobile drawer ────────────────────────────────── */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setSidebarOpen(false)} />

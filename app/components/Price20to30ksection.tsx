@@ -4,11 +4,12 @@ import { useRef, useEffect, useState } from 'react';
 import MobileCard from './MobileCard';
 
 interface Mobile {
-  id: string;  // ✅ string
+  id: string;
   image: string;
   name: string;
   price: number;
   brand: string;
+  brandSlug: string;
 }
 
 interface Price20to30kSectionProps {
@@ -79,7 +80,14 @@ export default function Price20to30kSection({ mobiles }: Price20to30kSectionProp
       >
         {mobiles.map((mobile) => (
           <div key={mobile.id} className="flex-shrink-0">
-            <MobileCard id={mobile.id} image={mobile.image} name={mobile.name} price={mobile.price} brand={mobile.brand} />
+            <MobileCard
+              id={mobile.id}
+              image={mobile.image}
+              name={mobile.name}
+              price={mobile.price}
+              brand={mobile.brand}
+              brandSlug={mobile.brandSlug}
+            />
           </div>
         ))}
       </div>

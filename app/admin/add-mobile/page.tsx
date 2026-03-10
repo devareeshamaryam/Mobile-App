@@ -2,14 +2,18 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Plus, Trash2, CheckCircle, ImagePlus, X, Loader2 } from "lucide-react";
+import dynamic from "next/dynamic";
+import type { TipTapHandle } from "./TipTapEditor";
 
-/* ── Price range mapper — frontend sections ke saath match karta hai ── */
+const TipTapEditor = dynamic(() => import("./TipTapEditor"), { ssr: false });
+
+/* ── Price range mapper ── */
 function getPriceRange(price: number): string {
-  if (price < 20000)  return "10k-20k";
-  if (price < 30000)  return "20k-30k";
-  if (price < 40000)  return "30k-40k";
-  if (price < 50000)  return "40k-50k";
-  return "above-50k";  // 50k+ sab ek hi section mein
+  if (price < 20000) return "10k-20k";
+  if (price < 30000) return "20k-30k";
+  if (price < 40000) return "30k-40k";
+  if (price < 50000) return "40k-50k";
+  return "above-50k";
 }
 
 /* ── Upload image to Cloudinary ── */
@@ -17,7 +21,6 @@ async function uploadToCloudinary(file: File): Promise<string> {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!);
-
   const res = await fetch(
     `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
     { method: "POST", body: formData }
@@ -94,6 +97,7 @@ export default function AddMobilePage() {
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState("");
   const fileInputRef                = useRef<HTMLInputElement>(null);
+  const editorRef                   = useRef<TipTapHandle>(null);
 
   useEffect(() => {
     fetch("/api/categories")
@@ -108,11 +112,7 @@ export default function AddMobilePage() {
 
   const handleBrandChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selected = categories.find((c) => c.name === e.target.value);
-    setForm((f) => ({
-      ...f,
-      brand:     selected?.name ?? "",
-      brandSlug: selected?.slug ?? "",
-    }));
+    setForm((f) => ({ ...f, brand: selected?.name ?? "", brandSlug: selected?.slug ?? "" }));
   };
 
   const handleImageFiles = (files: FileList | null) => {
@@ -157,13 +157,14 @@ export default function AddMobilePage() {
       const priceRange = getPriceRange(price);
 
       const body = {
-        name:      form.name,
-        brand:     form.brand,
-        brandSlug: form.brandSlug,
+        name:        form.name,
+        brand:       form.brand,
+        brandSlug:   form.brandSlug,
         priceRange,
         price,
-        images:   uploadedUrls,
-        variants: form.variants
+        images:      uploadedUrls,
+        description: editorRef.current?.getHTML() ?? "",
+        variants:    form.variants
           .filter((v) => v.label && v.price)
           .map((v) => ({ label: v.label, price: Number(v.price) })),
         specs: {
@@ -193,6 +194,7 @@ export default function AddMobilePage() {
 
       setSuccess(true);
       setForm(initForm);
+      editorRef.current?.clearContent();
       setTimeout(() => setSuccess(false), 3500);
     } catch (err: any) {
       setError(err.message);
@@ -201,18 +203,14 @@ export default function AddMobilePage() {
     }
   };
 
-  const priceNum     = Number(form.price);
-  const priceRange   = form.price ? getPriceRange(priceNum) : null;
-  const pricePreview = priceRange ? `/${priceRange}` : null;
-  const brandPreview = form.brandSlug ? `/${form.brandSlug}` : null;
-
-  // Human-readable price range label for preview
+  const priceNum   = Number(form.price);
+  const priceRange = form.price ? getPriceRange(priceNum) : null;
   const priceLabel: Record<string, string> = {
-    "10k-20k":  "Rs. 10,000 – 20,000",
-    "20k-30k":  "Rs. 20,000 – 30,000",
-    "30k-40k":  "Rs. 30,000 – 40,000",
-    "40k-50k":  "Rs. 40,000 – 50,000",
-    "above-50k":"Rs. 50,000+",
+    "10k-20k":   "Rs. 10,000 – 20,000",
+    "20k-30k":   "Rs. 20,000 – 30,000",
+    "30k-40k":   "Rs. 30,000 – 40,000",
+    "40k-50k":   "Rs. 40,000 – 50,000",
+    "above-50k": "Rs. 50,000+",
   };
 
   return (
@@ -241,13 +239,7 @@ export default function AddMobilePage() {
           <h3 className="text-sm font-bold text-[#1e3a8a] uppercase tracking-wide">Basic Information</h3>
         </div>
         <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-
-          <Input
-            label="Mobile Name" value={form.name} onChange={set("name")}
-            placeholder="e.g. Samsung Galaxy A55" required
-          />
-
-          {/* Brand */}
+          <Input label="Mobile Name" value={form.name} onChange={set("name")} placeholder="e.g. Samsung Galaxy A55" required />
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
               Brand <span className="text-red-500">*</span>
@@ -271,19 +263,14 @@ export default function AddMobilePage() {
                 ))}
               </select>
             )}
-            {brandPreview && (
+            {form.brandSlug && (
               <p className="text-[10px] text-blue-500 mt-1 font-medium">
-                → Brand page: <span className="font-bold">{brandPreview}</span>
+                → Brand page: <span className="font-bold">/{form.brandSlug}</span>
               </p>
             )}
           </div>
-
-          {/* Price */}
           <div>
-            <Input
-              label="Base Price (PKR)" value={form.price} onChange={set("price")}
-              placeholder="e.g. 35000" type="number" required
-            />
+            <Input label="Base Price (PKR)" value={form.price} onChange={set("price")} placeholder="e.g. 35000" type="number" required />
             {priceRange && (
               <p className="text-[10px] text-blue-500 mt-1 font-medium">
                 → Section: <span className="font-bold">{priceLabel[priceRange]}</span>
@@ -291,7 +278,6 @@ export default function AddMobilePage() {
               </p>
             )}
           </div>
-
         </div>
       </div>
 
@@ -445,6 +431,17 @@ export default function AddMobilePage() {
         <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
           <Select label="Speaker"    value={form.speaker} onChange={set("speaker")} options={["Mono Speaker", "Stereo Speakers", "Dual Speakers"]} />
           <Select label="3.5mm Jack" value={form.jack}    onChange={set("jack")}    options={["Yes", "No"]} />
+        </div>
+      </div>
+
+      {/* ── Description (TipTap) ── */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-5">
+        <div className="bg-gray-50 border-b border-gray-200 px-5 py-3">
+          <h3 className="text-sm font-bold text-[#1e3a8a] uppercase tracking-wide">Description</h3>
+        </div>
+        <div className="p-5">
+          <TipTapEditor ref={editorRef} />
+          <p className="text-[10px] text-gray-400 mt-1.5">Bold, italic, headings, lists support hain.</p>
         </div>
       </div>
 

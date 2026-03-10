@@ -106,7 +106,7 @@ export default function Header() {
             <Image src="/hafeezC.png" alt="Hafeez Centre" fill className="object-contain" priority />
           </div>
           <h1 className="text-base font-bold text-[#1e3a8a] tracking-tight flex-shrink-0 group-hover:text-blue-500 transition-colors duration-200">
-            Hafeez Centre
+           Z Mobiles
           </h1>
         </Link>
         {/* ← Sirf ref aur state add hua, styling same */}
@@ -139,7 +139,7 @@ export default function Header() {
           </div>
           <div className="flex flex-col justify-center">
             <h1 className="text-lg font-bold text-[#1e3a8a] tracking-tight leading-tight group-hover:text-blue-500 transition-colors duration-200">
-              Hafeez Centre
+              Z Mobiles
             </h1>
             <p className="text-[10px] text-gray-400 font-medium tracking-wide group-hover:text-blue-300 transition-colors duration-200">
               Mobile Price Portal

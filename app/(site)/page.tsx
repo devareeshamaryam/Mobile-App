@@ -11,11 +11,12 @@ import Mobile from '@/models/Mobile';
 // Helper: MongoDB doc → component-friendly object
 function toCard(m: any) {
   return {
-    id:    m._id.toString(),
-    name:  m.name,
-    price: m.price,
-    image: m.images?.[0] ?? '/placeholder.png',
-    brand: m.brand,
+    id:        m._id.toString(),
+    name:      m.name,
+    price:     m.price,
+    image:     m.images?.[0] ?? '/placeholder.png',
+    brand:     m.brand,
+    brandSlug: m.brandSlug ?? '',  // ← added
   };
 }
 

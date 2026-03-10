@@ -73,7 +73,7 @@ export default function Sidebar({ isOpen: mobileOpen = false, onClose }: Sidebar
             <h2 className={`text-xs font-bold text-[#1e3a8a] text-center transition-all duration-300 ${
               isHovered ? 'opacity-100' : 'opacity-0 hidden'
             }`}>
-              Hafeez Centre
+              Z Mobiles
             </h2>
           </div>
 

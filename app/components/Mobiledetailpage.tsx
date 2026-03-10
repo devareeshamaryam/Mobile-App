@@ -1,7 +1,7 @@
  'use client';
 
-import { useState } from 'react';
-import Image from 'next/image';
+import { useState, useEffect } from 'react';
+ import Image from 'next/image';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Smartphone, GitCompareArrows } from 'lucide-react';
 import DiscoverMoreResponsive from './Discovermoreresponsive';
@@ -15,6 +15,7 @@ interface Phone {
   brand: string;
   brandSlug?: string;
   priceRange?: string;
+  description?: string;
   variants?: { label: string; price: number }[];
   specs?: Record<string, Record<string, string>>;
 }
@@ -38,7 +39,8 @@ export default function MobileDetailPage({ phone }: { phone: Phone }) {
       ? phone.variants[selectedVariant].price
       : phone.price ?? 0;
 
-  const pageUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const [pageUrl, setPageUrl] = useState('');
+  useEffect(() => { setPageUrl(window.location.href); }, []);
   const shareText = `${phone.name} - Rs. ${displayPrice.toLocaleString('en-PK')} - Check price & specs!`;
 
   const shareLinks = [
@@ -184,7 +186,6 @@ export default function MobileDetailPage({ phone }: { phone: Phone }) {
                 </div>
               )}
 
-              {/* ── COMPARE BUTTON ── fixed: mobile1 instead of phone ── */}
               <div className="mt-5">
                 <Link
                   href={`/compare?mobile1=${phone._id}`}
@@ -225,6 +226,19 @@ export default function MobileDetailPage({ phone }: { phone: Phone }) {
                 ))}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ── DESCRIPTION ── */}
+        {phone.description && phone.description !== '<p></p>' && (
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+            <h2 className="text-xl font-bold text-gray-800 text-center py-5 border-b border-gray-100">
+              Description
+            </h2>
+            <div
+              className="prose prose-sm max-w-none p-6 text-gray-700"
+              dangerouslySetInnerHTML={{ __html: phone.description }}
+            />
           </div>
         )}
 
