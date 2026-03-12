@@ -37,7 +37,7 @@ export default function Footer() {
 
           {/* Copyright */}
         <p className="text-center text-sm text-blue-200">
-          ©Copyright Hafeez Centre 2026. All rights reserved
+          ©Copyright Z Mobiles 2026. All rights reserved
         </p>
 
       </div>
