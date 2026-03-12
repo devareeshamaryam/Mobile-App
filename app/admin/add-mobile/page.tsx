@@ -16,18 +16,18 @@ function getPriceRange(price: number): string {
   return "above-50k";
 }
 
-/* ── Upload image to Cloudinary ── */
+/* ✅ Upload image to CDN */
 async function uploadToCloudinary(file: File): Promise<string> {
   const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!);
-  const res = await fetch(
-    `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-    { method: "POST", body: formData }
-  );
+  formData.append("image", file);
+  const res = await fetch(`${process.env.NEXT_PUBLIC_CDN_URL}/upload`, {
+    method: "POST",
+    headers: { "x-api-key": process.env.NEXT_PUBLIC_CDN_SECRET_KEY! },
+    body: formData,
+  });
   if (!res.ok) throw new Error("Image upload failed");
   const data = await res.json();
-  return data.secure_url;
+  return data.url;
 }
 
 /* ── Reusable components ── */
@@ -298,7 +298,7 @@ export default function AddMobilePage() {
               className="w-full flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl py-10 text-gray-400 hover:border-[#1e3a8a] hover:text-[#1e3a8a] hover:bg-blue-50/30 transition-all">
               <ImagePlus className="w-8 h-8" />
               <p className="text-sm font-medium">Click to select images</p>
-              <p className="text-xs">PNG, JPG, WEBP supported • Cloudinary pe upload hongi</p>
+              <p className="text-xs">PNG, JPG, WEBP supported • CDN pe upload hongi</p>
             </button>
           ) : (
             <div className="flex flex-wrap gap-3">

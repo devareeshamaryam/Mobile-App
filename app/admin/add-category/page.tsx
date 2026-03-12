@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -38,19 +38,18 @@ export default function AddCategoryPage() {
     setError(null);
   };
 
-  // Upload image to Cloudinary
+  // ✅ Upload image to CDN
   const uploadImage = async (file: File): Promise<string> => {
     const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!);
-
-    const res = await fetch(
-      `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-      { method: "POST", body: formData }
-    );
+    formData.append("image", file);
+    const res = await fetch(`${process.env.NEXT_PUBLIC_CDN_URL}/upload`, {
+      method: "POST",
+      headers: { "x-api-key": process.env.NEXT_PUBLIC_CDN_SECRET_KEY! },
+      body: formData,
+    });
     if (!res.ok) throw new Error("Image upload failed");
     const data = await res.json();
-    return data.secure_url;
+    return data.url;
   };
 
   // Submit
